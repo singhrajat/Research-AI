@@ -21,28 +21,6 @@ Full‑stack research assistant that turns a **topic + goal** into a structured 
 - `client/`: UI and export utilities
 - `server/`: API, orchestration graphs, prompts, and services
 
-## Orchestration graph
-
-```mermaid
-flowchart LR
-  UI[Client UI<br/>topic + goal input] -->|POST| PLAN["/api/research/plan"]
-  UI -->|POST (optional)| PRE["/api/research/precheck"]
-
-  PLAN --> AMB[LangGraph: ambiguityNode<br/>ambiguity score → audience/depth]
-  AMB --> PLNR[LangGraph: plannerNode<br/>planSteps + prioritized sub-questions]
-  PLNR --> UI
-
-  UI -->|Approve & Start| EXEC["/api/research/execute<br/>(SSE stream)"]
-  EXEC --> KEY{Has TAVILY_API_KEY?}
-  KEY -- no --> SSEERR[Emit SSE: error]
-  KEY -- yes --> SEARCH[LangGraph: searchAllNode<br/>retrieve web results + summarize per sub-question]
-  SEARCH --> SSE1[Emit SSE: subquestion_start / subquestion_done]
-  SEARCH --> SYN[LangGraph: synthesisNode<br/>final brief synthesis]
-  SYN --> SSE2[Emit SSE: synthesis_start]
-  SYN --> DONE[Emit SSE: complete (brief)]
-
-  DONE --> EXP[Client exports: Markdown / DOCX]
-```
 
 ## Architecture (AI engineer view)
 
