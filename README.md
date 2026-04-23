@@ -46,6 +46,55 @@ flowchart LR
 
 ## Architecture (AI engineer view)
 
+### Architecture diagram (end-to-end)
+
+```
+                         ┌─────────────────────────────────────────────────────┐
+                         │                    Client (React + Vite)            │
+                         │  - Topic/goal intake                                │
+                         │  - Plan review + approval                            │
+                         │  - Streaming progress UI (SSE reader)                │
+                         │  - Export: Markdown / DOCX                           │
+                         └───────────────────────────────┬─────────────────────┘
+                                                         │
+                                             HTTP `/api/*`│ (dev proxy)
+                                                         ▼
+                         ┌─────────────────────────────────────────────────────┐
+                         │                 Server (Express + TypeScript)        │
+                         │  Routes                                               │
+                         │   - POST /api/research/precheck                       │
+                         │   - POST /api/research/plan                           │
+                         │   - POST /api/research/execute  (SSE)                 │
+                         │                                                       │
+                         │  Validation: Zod at request boundary                  │
+                         └───────────────┬───────────────────────────────┬─────┘
+                                         │                               │
+                                         │                               │ optional
+                                         ▼                               ▼
+                 ┌──────────────────────────────────────┐   ┌──────────────────────┐
+                 │     LangGraph: Planner workflow       │   │   Langfuse tracing    │
+                 │  ambiguityNode → plannerNode          │   │  (spans + generations)│
+                 │  output: planSteps + subQuestions     │   └──────────────────────┘
+                 └──────────────────────┬───────────────┘
+                                        │
+                                        ▼
+                 ┌──────────────────────────────────────────────────────────────┐
+                 │         LangGraph: Execution workflow (streamed)              │
+                 │  searchAllNode → synthesisNode                                │
+                 │    - retrieve web docs per sub-question (Tavily)              │
+                 │    - summarize evidence per sub-question (LLM)                │
+                 │    - synthesize final brief (LLM)                             │
+                 │  SSE events: start/done per sub-question → synthesis → complete│
+                 └──────────────────────┬───────────────────────────────────────┘
+                                        │
+                                        ▼
+                          ┌────────────────────────────────────┐
+                          │    External services (pluggable)    │
+                          │  - Web retrieval: Tavily             │
+                          │  - LLM: OpenAI via LangChain         │
+                          └────────────────────────────────────┘
+```
+
 ### Core design goals
 
 - **Structured planning before retrieval**: force the system to generate a plan + sub‑questions first, then retrieve evidence per sub‑question.
