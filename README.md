@@ -25,14 +25,14 @@ Full‑stack research assistant that turns a **topic + goal** into a structured 
 
 ```mermaid
 flowchart LR
-  UI[Client UI<br/>topic + goal input] -->|POST| PLAN[/api/research/plan/]
-  UI -->|POST (optional)| PRE[/api/research/precheck/]
+  UI[Client UI<br/>topic + goal input] -->|POST| PLAN["/api/research/plan"]
+  UI -->|POST (optional)| PRE["/api/research/precheck"]
 
   PLAN --> AMB[LangGraph: ambiguityNode<br/>ambiguity score → audience/depth]
   AMB --> PLNR[LangGraph: plannerNode<br/>planSteps + prioritized sub-questions]
   PLNR --> UI
 
-  UI -->|Approve & Start| EXEC[/api/research/execute<br/>(SSE stream)/]
+  UI -->|Approve & Start| EXEC["/api/research/execute<br/>(SSE stream)"]
   EXEC --> KEY{Has TAVILY_API_KEY?}
   KEY -- no --> SSEERR[Emit SSE: error]
   KEY -- yes --> SEARCH[LangGraph: searchAllNode<br/>retrieve web results + summarize per sub-question]
